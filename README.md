@@ -16,6 +16,7 @@ This project extracts an event occurrence matrix from HDFS logs and trains four 
 - Decision Tree
 - Support Vector Machine
 - Convolutional Neural Network
+- Long Short-Term Memory
 
 ## Dataset
 The script expects **HDFS_100K.log_structured.csv** and **anomaly_label.csv** inside the `data/` directory.
