@@ -16,8 +16,8 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, brier_score_loss
+from utils.metrics import compute_ece
 
 # Define Deep Learning Models
 class CNNModel(nn.Module):
@@ -64,10 +64,10 @@ def train_dl_model(model, train_loader, device):
             loss.backward()
             optimizer.step()
 
-# Evaluation function
-def evaluate_dl_model(model, test_loader, device, model_name, calibration_method, results):
+
+def evaluate_dl_model(model, test_loader, device, model_name, calibration_method, results, n_bins=10):
     model.eval() if hasattr(model, "eval") else None  # Ensure compatibility with callable calibration functions
-    y_pred_list, y_true_list = [], []
+    y_pred_list, y_true_list, y_prob_list = [], [], []
     
     with torch.no_grad():
         for inputs, labels in test_loader:
@@ -84,10 +84,18 @@ def evaluate_dl_model(model, test_loader, device, model_name, calibration_method
             
             y_pred_list.extend(predicted.cpu().numpy())
             y_true_list.extend(labels.cpu().numpy())
+            y_prob_list.extend(predicted_probs.cpu().numpy())
     
     # Convert to 1D arrays
     y_true_list = np.array(y_true_list).ravel().astype(int)
     y_pred_list = np.array(y_pred_list).ravel().astype(int)
+    y_prob_list = np.array(y_prob_list).ravel()
+    
+    # Ensure probability values are within [0,1]
+    y_prob_list = np.clip(y_prob_list, 0, 1)
+    
+    ece = compute_ece(y_true_list, y_prob_list, n_bins)
+    bce = brier_score_loss(y_true_list, y_prob_list)
     
     results.append({
         "Classifier": model_name,
@@ -95,7 +103,9 @@ def evaluate_dl_model(model, test_loader, device, model_name, calibration_method
         "Accuracy": accuracy_score(y_true_list, y_pred_list),
         "Precision": precision_score(y_true_list, y_pred_list, average='binary', zero_division=1),
         "Recall": recall_score(y_true_list, y_pred_list, average='binary', zero_division=1),
-        "F1-score": f1_score(y_true_list, y_pred_list, average='binary', zero_division=1)
+        "F1-score": f1_score(y_true_list, y_pred_list, average='binary', zero_division=1),
+        "ECE": ece,
+        "BCE": bce
     })
     
     return results
