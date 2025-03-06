@@ -16,9 +16,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.calibration import CalibratedClassifierCV
-from preprocess import preprocess_data
-from ML_model_experiments import run_ML_models
-from DL_model_experiments import run_DL_models
+from experiments.preprocess import preprocess_data
+from experiments.ML_model_experiments import run_ML_models
+from experiments.DL_model_experiments import run_DL_models
 
 # Define file paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
