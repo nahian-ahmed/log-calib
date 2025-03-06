@@ -1,3 +1,13 @@
+<!-- 
+Model Calibration of Learning-Based Classifiers: A Case Study on Anomalous System Log Detection
+
+CS 563 : SOFTWARE MAINTAINANCE AND EVOLUTION
+Winter 2025
+Oregon State University
+
+Nahian Ahmed
+-->
+
 # Model Calibration of Learning-Based Classifiers: A Case Study on Anomalous System Log Detection
 
 ## Overview
