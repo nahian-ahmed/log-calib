@@ -13,7 +13,7 @@ The script expects **HDFS_100K.log_structured.csv** and **anomaly_label.csv** in
 ## Setup
 1. Install dependencies:
    ```bash
-   pip install pandas numpy scikit-learn torch
+   pip install pandas numpy scikit-learn torch loglizer
    ```
 2. Run the script:
    ```bash
