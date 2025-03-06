@@ -26,7 +26,7 @@ def run_ML_models (data, classifiers, calibration_methods):
         model.fit(x_train_transformed, y_train)
         for cal_name, cal_func in calibration_methods.items():
             cal_model = cal_func(model)
-            if cal_name not in ["No Calibration (60%)", "No Calibration (80%)"]:
+            if cal_name not in ["No Calibration"]:
                 cal_model.fit(x_calibration_transformed, y_calibration)
             y_pred = cal_model.predict(x_test_transformed)
             results.append({

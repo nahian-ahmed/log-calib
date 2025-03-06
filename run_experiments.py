@@ -50,20 +50,16 @@ RANDOM_STATE = 1  # Fixed random state for reproducibility
 classifiers = {
     "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE),
     "Decision Tree": DecisionTreeClassifier(random_state=RANDOM_STATE),
-    "SVM": SVC(probability=True, random_state=RANDOM_STATE)
+    "Support Vector Machine": SVC(probability=True, random_state=RANDOM_STATE)
 }
 
 
 # Define calibration methods
 calibration_methods = {
+    "No Calibration": lambda model: model,
     "Platt Scaling": lambda model: CalibratedClassifierCV(estimator=model, method="sigmoid"),
     "Logistic Calibration": lambda model: CalibratedClassifierCV(model, method="sigmoid", cv=5),
-    "Isotonic Calibration": lambda model: CalibratedClassifierCV(model, method="isotonic", cv=5),
-    "No Calibration (60%)": lambda model: model,
-    "No Calibration (80%)": lambda model: model.fit(
-        np.vstack((x_train_transformed, x_calibration_transformed)),
-        np.hstack((y_train, y_calibration))
-    )
+    "Isotonic Calibration": lambda model: CalibratedClassifierCV(model, method="isotonic", cv=5)
 }
 
 ML_results = run_ML_models(data, classifiers, calibration_methods)
@@ -71,7 +67,15 @@ ML_results = run_ML_models(data, classifiers, calibration_methods)
 ########
 # 3. Run DL Models
 ########
-DL_results = run_DL_models(data)
+
+# Define classifiers
+DL_classifiers = {
+    "Convolutional Neural Network",
+    "Long Short-Term Memory"
+}
+
+
+DL_results = run_DL_models(data, DL_classifiers)
 
 
 # Print and save results
