@@ -11,6 +11,10 @@ Nahian Ahmed
 import os
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
 from loglizer import dataloader, preprocessing
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -30,86 +34,128 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 TRAIN_RATIO = 0.8  # 80% training, 20% testing
 RANDOM_STATE = 1  # Fixed random state for reproducibility
 
-# Load the data using dataloader.py
+# Load data
 (x_train, y_train), (x_test, y_test) = dataloader.load_HDFS(LOG_FILE, LABEL_FILE, train_ratio=TRAIN_RATIO)
 
-# Print dataset information
-print("DATASET:")
-print(f"Number of training instances: {len(y_train)}")
-print(f"Number of test instances: {len(y_test)}")
-
-# Class distribution
-train_class_distribution = pd.Series(y_train).value_counts().rename("Train Count")
-test_class_distribution = pd.Series(y_test).value_counts().rename("Test Count")
-
-num_train_anomalies = train_class_distribution.get(1, 0)
-num_train_normal = train_class_distribution.get(0, 0)
-num_test_anomalies = test_class_distribution.get(1, 0)
-num_test_normal = test_class_distribution.get(0, 0)
-
-print(f"Training set - Anomalous instances: {num_train_anomalies}, Normal instances: {num_train_normal}")
-print(f"Test set - Anomalous instances: {num_test_anomalies}, Normal instances: {num_test_normal}")
-
-train_anomaly_percentage = (num_train_anomalies / len(y_train)) * 100
-test_anomaly_percentage = (num_test_anomalies / len(y_test)) * 100
-
-print(f"Training set anomaly percentage: {train_anomaly_percentage:.2f}%")
-print(f"Test set anomaly percentage: {test_anomaly_percentage:.2f}%")
-print("\n")
-
-class_distribution_df = pd.concat([train_class_distribution, test_class_distribution], axis=1).fillna(0)
-class_distribution_df.to_csv(os.path.join(PREPROCESSED_DIR, "train_test_stats.csv"))
-
-# Convert event sequences into numerical features using FeatureExtractor
+# Feature extraction
 feature_extractor = preprocessing.FeatureExtractor()
 x_train_transformed = feature_extractor.fit_transform(x_train, term_weighting="tf-idf", normalization="zero-mean")
 x_test_transformed = feature_extractor.transform(x_test)
 
-# Save transformed dataset as CSV
-np.savetxt(os.path.join(PREPROCESSED_DIR, "x_train_transformed.csv"), x_train_transformed, delimiter=",")
-np.savetxt(os.path.join(PREPROCESSED_DIR, "x_test_transformed.csv"), x_test_transformed, delimiter=",")
+# Convert to PyTorch tensors
+x_train_tensor = torch.tensor(x_train_transformed, dtype=torch.float32)
+y_train_tensor = torch.tensor(y_train, dtype=torch.long)
+x_test_tensor = torch.tensor(x_test_transformed, dtype=torch.float32)
+y_test_tensor = torch.tensor(y_test, dtype=torch.long)
 
-# Define classifiers in a dictionary
+# Define classifiers
 classifiers = {
     "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE),
     "Decision Tree": DecisionTreeClassifier(random_state=RANDOM_STATE),
     "SVM": SVC(random_state=RANDOM_STATE)
 }
 
-# Initialize results list
-results = []
+# Define Deep Learning Models
+class CNNModel(nn.Module):
+    def __init__(self, input_dim):
+        super(CNNModel, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear((input_dim // 2) * 16, 64)
+        self.fc2 = nn.Linear(64, 2)
 
-# Train and evaluate each model
-print("RESULTS:")
+    def forward(self, x):
+        x = x.unsqueeze(1)  # Add channel dimension
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = x.view(x.size(0), -1)
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class LSTMModel(nn.Module):
+    def __init__(self, input_dim, hidden_dim=64, num_layers=2):
+        super(LSTMModel, self).__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, 2)
+
+    def forward(self, x):
+        x = x.unsqueeze(1)  # Add sequence length dimension
+        lstm_out, _ = self.lstm(x)
+        x = self.fc(lstm_out[:, -1, :])
+        return x
+
+# Train ML models
+results = []
 for name, model in classifiers.items():
     model.fit(x_train_transformed, y_train)
     y_pred = model.predict(x_test_transformed)
-    
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, zero_division=1)
-    recall = recall_score(y_test, y_pred, zero_division=1)
-    f1 = f1_score(y_test, y_pred, zero_division=1)
-    
     results.append({
         "Classifier": name,
-        "Accuracy": accuracy,
-        "Precision": precision,
-        "Recall": recall,
-        "F1-score": f1
+        "Accuracy": accuracy_score(y_test, y_pred),
+        "Precision": precision_score(y_test, y_pred, zero_division=1),
+        "Recall": recall_score(y_test, y_pred, zero_division=1),
+        "F1-score": f1_score(y_test, y_pred, zero_division=1)
     })
+
+# Training Parameters
+BATCH_SIZE = 32
+EPOCHS = 10
+LEARNING_RATE = 0.001
+
+def train_model(model, train_loader, device):
+    model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
-    print(f"{name} - Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1:.4f}")
-print("\n")
+    for epoch in range(EPOCHS):
+        model.train()
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-# Save results to CSV
+def evaluate_model(model, test_loader, device, model_name):
+    model.eval()
+    y_pred_list, y_true_list = [], []
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs, 1)
+            y_pred_list.extend(predicted.cpu().numpy())
+            y_true_list.extend(labels.cpu().numpy())
+    
+    results.append({
+        "Classifier": model_name,
+        "Accuracy": accuracy_score(y_true_list, y_pred_list),
+        "Precision": precision_score(y_true_list, y_pred_list, zero_division=1),
+        "Recall": recall_score(y_true_list, y_pred_list, zero_division=1),
+        "F1-score": f1_score(y_true_list, y_pred_list, zero_division=1)
+    })
+
+def run_deep_learning_models():
+    train_dataset = TensorDataset(x_train_tensor, y_train_tensor)
+    test_dataset = TensorDataset(x_test_tensor, y_test_tensor)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    models = {
+        "CNN": CNNModel(input_dim=x_train_transformed.shape[1]),
+        "LSTM": LSTMModel(input_dim=x_train_transformed.shape[1])
+    }
+    
+    for name, model in models.items():
+        train_model(model, train_loader, device)
+        evaluate_model(model, test_loader, device, name)
+
+run_deep_learning_models()
+
+# Save results
 results_df = pd.DataFrame(results)
-results_df.to_csv(os.path.join(RESULTS_DIR, "model_results.csv"), index=False)
-
-# Save labels as CSV for further ML processing
-train_df = pd.DataFrame({"EventSequence": x_train, "Label": y_train})
-test_df = pd.DataFrame({"EventSequence": x_test, "Label": y_test})
-
-train_df.to_csv(os.path.join(PREPROCESSED_DIR, "train.csv"), index=False)
-test_df.to_csv(os.path.join(PREPROCESSED_DIR, "test.csv"), index=False)
-
-print("Supervised ML dataset created and models trained successfully!")
+print(results_df)
+results_df.to_csv(os.path.join(RESULTS_DIR, "performance_metrics.csv"), index=False)
