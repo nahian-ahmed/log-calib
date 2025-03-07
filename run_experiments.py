@@ -1,7 +1,7 @@
 """
 Model Calibration of Learning-Based Classifiers: A Case Study on Anomalous System Log Detection
 
-CS 563 : SOFTWARE MAINTAINANCE AND EVOLUTION
+CS 563 : SOFTWARE MAINTENANCE AND EVOLUTION
 Winter 2025
 Oregon State University
 
@@ -19,6 +19,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from experiments.preprocess import preprocess_data
 from experiments.ML_model_experiments import run_ML_models
 from experiments.DL_model_experiments import run_DL_models
+from experiments.stat_tests import run_stat_sig_tests
 
 # Define file paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -81,3 +82,10 @@ DL_results = run_DL_models(data, DL_classifiers)
 results_df = pd.concat([pd.DataFrame(ML_results), pd.DataFrame(DL_results)], ignore_index=True) 
 print(results_df)
 results_df.to_csv(os.path.join(RESULTS_DIR, "performance_metrics.csv"), index=False)
+
+
+########
+# 4. Run statistical tests
+########
+
+run_stat_sig_tests(RESULTS_DIR)

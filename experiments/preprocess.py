@@ -1,7 +1,7 @@
 """
 Model Calibration of Learning-Based Classifiers: A Case Study on Anomalous System Log Detection
 
-CS 563 : SOFTWARE MAINTAINANCE AND EVOLUTION
+CS 563 : SOFTWARE MAINTENANCE AND EVOLUTION
 Winter 2025
 Oregon State University
 
@@ -14,18 +14,15 @@ import pandas as pd
 from loglizer import dataloader, preprocessing
 
 
+# Set data split ratios
+TRAIN_RATIO = 0.5
+CALIBRATION_RATIO = 0.3
+TEST_RATIO = 0.2
 
 def preprocess_data (BASE_DIR, LOG_FILE, LABEL_FILE, PREPROCESSED_DIR, RESULTS_DIR):
     
     os.makedirs(PREPROCESSED_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
-
-
-    # Set data split ratios
-    TRAIN_RATIO = 0.6  # 60% training
-    CALIBRATION_RATIO = 0.2  # 20% calibration
-    TEST_RATIO = 0.2  # 20% testing
-
 
     # Load data
     (x_train, y_train), (x_remaining, y_remaining) = dataloader.load_HDFS(LOG_FILE, LABEL_FILE, train_ratio=TRAIN_RATIO)

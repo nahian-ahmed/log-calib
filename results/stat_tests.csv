@@ -1,0 +1,19 @@
+,,W-statistic,p-value
+Platt Scaling,Accuracy,0.0,0.5
+Platt Scaling,Precision,0.0,1.0
+Platt Scaling,Recall,1.0,1.0
+Platt Scaling,F1-score,0.0,0.5
+Platt Scaling,ECE,5.0,0.625
+Platt Scaling,BCE,0.0,0.0625
+Logistic Calibration,Accuracy,0.0,0.5
+Logistic Calibration,Precision,0.0,0.5
+Logistic Calibration,Recall,0.0,0.5
+Logistic Calibration,F1-score,0.0,0.5
+Logistic Calibration,ECE,5.0,0.625
+Logistic Calibration,BCE,0.0,0.0625
+Isotonic Calibration,Accuracy,3.0,0.5
+Isotonic Calibration,Precision,0.0,0.125
+Isotonic Calibration,Recall,0.0,0.125
+Isotonic Calibration,F1-score,3.0,0.5
+Isotonic Calibration,ECE,6.0,0.8125
+Isotonic Calibration,BCE,5.0,0.625

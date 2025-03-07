@@ -1,7 +1,7 @@
 """
 Model Calibration of Learning-Based Classifiers: A Case Study on Anomalous System Log Detection
 
-CS 563 : SOFTWARE MAINTAINANCE AND EVOLUTION
+CS 563 : SOFTWARE MAINTENANCE AND EVOLUTION
 Winter 2025
 Oregon State University
 
