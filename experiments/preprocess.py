@@ -15,8 +15,8 @@ from loglizer import dataloader, preprocessing
 
 
 # Set data split ratios
-TRAIN_RATIO = 0.5
-CALIBRATION_RATIO = 0.3
+TRAIN_RATIO = 0.6
+CALIBRATION_RATIO = 0.2
 TEST_RATIO = 0.2
 
 def preprocess_data (BASE_DIR, LOG_FILE, LABEL_FILE, PREPROCESSED_DIR, RESULTS_DIR):
