@@ -33,7 +33,7 @@ The script expects **HDFS_100K.log_structured.csv** and **anomaly_label.csv** in
    ```
 2. Run the script:
    ```bash
-   python main.py
+   python run_experiments.py
    ```
 
 ## Output
